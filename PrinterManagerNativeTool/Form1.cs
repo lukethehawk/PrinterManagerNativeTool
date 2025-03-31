@@ -126,7 +126,7 @@ namespace PrinterManagerNativeTool
             lstPrinters.Items.Clear();
             foreach (var p in printers)
             {
-                string stato = p.RawStatus == 0 ? "[Pronta]" : "[Offline]";
+                string stato = p.IsOffline ? "[Offline]" : "[Pronta]";
                 lstPrinters.Items.Add($"{p.PrinterName} {stato}");
             }
         }
