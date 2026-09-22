@@ -16,7 +16,7 @@ public sealed class PrinterInfo
     public string? NetworkHost { get; init; }
 
     public string StatusText => PrinterStatusFormatter.ToDisplayText(StatusFlags);
-    public string DefaultText => IsDefault ? "Sì" : string.Empty;
+    public string DefaultText => IsDefault ? "★" : string.Empty;
     public bool IsNetworkPrinter => !string.IsNullOrWhiteSpace(NetworkHost);
 }
 
