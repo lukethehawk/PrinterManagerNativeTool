@@ -1,103 +1,61 @@
-﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
-namespace PrinterManagerNativeTool
+namespace PrinterManagerNativeTool.Native;
+
+[Flags]
+internal enum PrinterEnumFlags : uint
 {
-    [Flags]
-    public enum PrinterEnumFlags : uint
-    {
-        PRINTER_ENUM_LOCAL = 0x00000002,
-        PRINTER_ENUM_CONNECTIONS = 0x00000004
-        // Puoi aggiungere altri flag se vuoi enumerare stampanti di rete remote, ecc.
-    }
+    Local = 0x00000002,
+    Connections = 0x00000004
+}
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    public struct PRINTER_INFO_2
-    {
-        public string pServerName;
-        public string pPrinterName;
-        public string pShareName;
-        public string pPortName;
-        public string pDriverName;
-        public string pComment;
-        public string pLocation;
-        public IntPtr pDevMode;
-        public string pSepFile;
-        public string pPrintProcessor;
-        public string pDatatype;
-        public string pParameters;
-        public IntPtr pSecurityDescriptor;
-        public uint Attributes;
-        public uint Priority;
-        public uint DefaultPriority;
-        public uint StartTime;
-        public uint UntilTime;
-        public uint Status;
-        public uint cJobs;
-        public uint AveragePPM;
-    }
+[StructLayout(LayoutKind.Sequential)]
+internal struct PrinterInfo2Native
+{
+    public IntPtr pServerName;
+    public IntPtr pPrinterName;
+    public IntPtr pShareName;
+    public IntPtr pPortName;
+    public IntPtr pDriverName;
+    public IntPtr pComment;
+    public IntPtr pLocation;
+    public IntPtr pDevMode;
+    public IntPtr pSepFile;
+    public IntPtr pPrintProcessor;
+    public IntPtr pDatatype;
+    public IntPtr pParameters;
+    public IntPtr pSecurityDescriptor;
+    public uint Attributes;
+    public uint Priority;
+    public uint DefaultPriority;
+    public uint StartTime;
+    public uint UntilTime;
+    public uint Status;
+    public uint cJobs;
+    public uint AveragePPM;
+}
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    public struct PRINTER_INFO_2_DETAILED
-    {
-        public string pServerName;
-        public string pPrinterName;
-        public string pShareName;
-        public string pPortName;
-        public string pDriverName;
-        public string pComment;
-        public string pLocation;
-        public IntPtr pDevMode;
-        public string pSepFile;
-        public string pPrintProcessor;
-        public string pDatatype;
-        public string pParameters;
-        public IntPtr pSecurityDescriptor;
-        public uint Attributes;
-        public uint Priority;
-        public uint DefaultPriority;
-        public uint StartTime;
-        public uint UntilTime;
-        public uint Status;
-        public uint cJobs;
-        public uint AveragePPM;
-    }
+internal static class PrinterNative
+{
+    [DllImport("winspool.drv", EntryPoint = "EnumPrintersW", CharSet = CharSet.Unicode, SetLastError = true)]
+    internal static extern bool EnumPrinters(
+        PrinterEnumFlags flags,
+        string? name,
+        uint level,
+        IntPtr printerEnum,
+        uint bufferSize,
+        out uint bytesNeeded,
+        out uint returned);
 
-    public static class PrinterNative
-    {
-        // EnumPrinters
-        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool EnumPrinters(
-            uint Flags,
-            string Name,
-            uint Level,
-            IntPtr pPrinterEnum,
-            uint cbBuf,
-            out uint pcbNeeded,
-            out uint pcReturned
-        );
+    [DllImport("winspool.drv", EntryPoint = "GetDefaultPrinterW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetDefaultPrinter(StringBuilder? buffer, ref uint bufferChars);
 
-        // GetPrinter
-        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool GetPrinter(
-            IntPtr hPrinter,
-            uint Level,
-            IntPtr pPrinter,
-            uint cbBuf,
-            out uint pcbNeeded
-        );
+    [DllImport("winspool.drv", EntryPoint = "SetDefaultPrinterW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetDefaultPrinter(string printerName);
 
-        // OpenPrinter / ClosePrinter
-        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool OpenPrinter(
-            string pPrinterName,
-            out IntPtr phPrinter,
-            IntPtr pDefault
-        );
-
-        [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool ClosePrinter(
-            IntPtr hPrinter
-        );
-    }
+    internal static string PtrToString(IntPtr value) =>
+        value == IntPtr.Zero ? string.Empty : Marshal.PtrToStringUni(value) ?? string.Empty;
 }
