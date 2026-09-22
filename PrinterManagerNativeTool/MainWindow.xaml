@@ -84,14 +84,15 @@
 
                     <Grid>
                         <TextBox x:Name="SearchBox"
+                                 Style="{StaticResource SearchTextBoxStyle}"
                                  ToolTip="Cerca per nome, porta, driver o indirizzo"
                                  TextChanged="SearchBox_TextChanged"/>
                         <TextBlock x:Name="SearchPlaceholder"
                                    Text="⌕  Cerca stampante, driver, porta o IP..."
                                    Margin="13,0,0,0"
                                    VerticalAlignment="Center"
-                                   IsHitTestVisible="False"
-                                   Opacity="0.48"/>
+                                   Foreground="#9EA4AD"
+                                   IsHitTestVisible="False"/>
                     </Grid>
 
                     <TextBlock Grid.Row="2"
@@ -113,6 +114,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Stampante"
                                                 Binding="{Binding Name}"
+                                                ElementStyle="{StaticResource PrinterGridTextStyle}"
                                                 Width="2.25*"/>
                             <DataGridTemplateColumn Header="Stato" Width="1.15*">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -123,7 +125,8 @@
                                                      Width="8"
                                                      Height="8"
                                                      Fill="Gray"
-                                                     Margin="0,0,7,0"/>
+                                                     Margin="0,0,7,0"
+                                                     VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding StatusText}"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -152,12 +155,15 @@
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Job"
                                                 Binding="{Binding JobCount}"
+                                                ElementStyle="{StaticResource PrinterGridTextStyle}"
                                                 Width="0.55*"/>
                             <DataGridTextColumn Header="Porta"
                                                 Binding="{Binding PortName}"
+                                                ElementStyle="{StaticResource PrinterGridTextStyle}"
                                                 Width="1.35*"/>
                             <DataGridTextColumn Header="Predef."
                                                 Binding="{Binding DefaultText}"
+                                                ElementStyle="{StaticResource PrinterGridTextStyle}"
                                                 Width="0.7*"/>
                         </DataGrid.Columns>
                     </DataGrid>
