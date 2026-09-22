@@ -1,55 +1,91 @@
-# Printer Manager native Tool
+# Printer Manager
 
-A lightweight Windows Forms application (C# / .NET) that simulates the classic printer control panel from Windows XP and 7, for quick and efficient management of installed printers on modern systems (Windows 10/11).
+A fast native Windows toolbox for managing and diagnosing installed printers without navigating through the Windows 11 Settings app.
 
-## 🎯 Features
+The v2 branch modernizes the original WinForms utility with WPF, .NET 10 and the native Windows Fluent theme while keeping the application small, portable and focused on technicians.
 
-- 📜 Displays a list of all installed printers
-- 🖱️ Right-click menu with:
-  - Open Print Queue
-  - Printer Preferences
-  - Set as Default Printer
-  - Printer Properties
-- 🔁 Reload printers list
-- 🧹 Spooler Tools (with admin rights prompt only when needed):
-  - Restart Print Spooler
-  - Clear Spooler Folder
+## Features
 
-## 💡 Why this tool?
+- Modern Windows 11-style WPF interface with automatic light/dark theme
+- Fast list of local and connected printers
+- Search by printer name, driver, port or network address
+- Printer status, current jobs, port, driver and default-printer state
+- Open print queue
+- Open printing preferences
+- Open printer properties
+- Set the default printer
+- Print a Windows test page
+- Open the embedded Web UI when a Standard TCP/IP address can be detected
+- Network diagnostics:
+  - ICMP ping
+  - RAW printing port 9100
+- Copy a compact diagnostic report to the clipboard
+- Spooler status
+- Restart the Print Spooler with UAC elevation only when required
+- Safely clear the spool directory by stopping and restarting the service
+- Portable self-contained single-file build
 
-Windows 11's printer settings are often slow and hidden behind multiple menus.  
-This tool restores a minimal and fast interface for technicians and system administrators.
+## Architecture
 
-## 🔒 UAC Smart Elevation
+The application deliberately avoids mixing Windows printer APIs with UI code.
 
-The app will **only request admin privileges when needed**, using UAC elevation:
-- Restarting the spooler
-- Clearing the spooler folder
+- `Models/PrinterInfo.cs` - printer data model and status formatting
+- `Native/PrinterNative.cs` - minimal `winspool.drv` interop
+- `Services/PrinterService.cs` - enumeration and common printer actions
+- `Services/NetworkDiagnosticsService.cs` - TCP/IP diagnostics
+- `Services/SpoolerService.cs` - privileged spooler operations
+- `MainWindow.xaml` - WPF/Fluent user interface
 
-No need to run the whole app as administrator.
+Printer discovery uses the native Windows spooler API instead of using WMI as a second source of truth.
 
-## 🛠️ Technologies
+## Requirements
 
-- Language: C#
-- Framework: .NET 8.0 (WinForms)
-- Visual Studio 2022
+### Development
 
-## 🚀 How to Build
+- Windows 10 or Windows 11
+- .NET 10 SDK
+- Visual Studio 2026+ or another .NET 10-compatible IDE
 
-1. Open the solution in Visual Studio 2022+
-2. Set configuration to **Release**
-3. Build the project
-4. Run the `.exe`
+### Running the published build
 
-## 📦 Portable Mode
+No .NET runtime installation is required for the default self-contained build.
 
-The application is fully portable and does **not require installation**.  
-All dependencies are embedded in the `.exe`.
+## Build
 
-## 📷 Preview
+```powershell
+dotnet restore PrinterManagerNativeTool.sln
+dotnet build PrinterManagerNativeTool.sln -c Release
+```
 
-![Screenshot](/main_window.png)
+## Portable publish
 
-## 📄 License
+```powershell
+dotnet publish .\PrinterManagerNativeTool\PrinterManagerNativeTool.csproj `
+  -c Release `
+  -r win-x64 `
+  --self-contained true `
+  -p:PublishSingleFile=true
+```
 
-MIT License – feel free to use, modify and redistribute.
+The generated executable is architecture-specific. Additional targets such as `win-arm64` can be published separately.
+
+## UAC model
+
+Printer Manager normally runs with standard user privileges.
+
+Administrative elevation is requested only for operations that require it:
+
+- Restart Print Spooler
+- Clear spooler files
+
+The elevated process performs the requested operation and then exits.
+
+## Network detection
+
+For Standard TCP/IP printer ports, Printer Manager reads the Windows print monitor configuration to determine the host/IP address. If the address is available, the UI can open the printer's Web interface and test ping and RAW port 9100.
+
+WSD, vendor-specific and virtual ports may not expose a directly usable IP address and are therefore shown without network diagnostics.
+
+## License
+
+MIT.
