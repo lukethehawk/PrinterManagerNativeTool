@@ -6,6 +6,7 @@ on:
       - master
     tags:
       - 'v*'
+      - 'V*'
   pull_request:
     branches:
       - master
@@ -43,7 +44,7 @@ jobs:
           if-no-files-found: error
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/V')
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/win-x64/PrinterManagerNativeTool.exe
