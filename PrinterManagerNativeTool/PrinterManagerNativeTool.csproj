@@ -9,6 +9,7 @@
 
     <AssemblyName>PrinterManagerNativeTool</AssemblyName>
     <RootNamespace>PrinterManagerNativeTool</RootNamespace>
+    <ApplicationIcon>Assets\PrinterManager.ico</ApplicationIcon>
 
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
@@ -20,6 +21,10 @@
 
   <ItemGroup>
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\PrinterManager.ico" />
   </ItemGroup>
 
 </Project>
