@@ -3,6 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ThemeMode="System">
     <Application.Resources>
+        <SolidColorBrush x:Key="PrinterGridBackgroundBrush" Color="#202226"/>
+        <SolidColorBrush x:Key="PrinterGridRowBrush" Color="#25282D"/>
+        <SolidColorBrush x:Key="PrinterGridAlternateRowBrush" Color="#292C32"/>
+        <SolidColorBrush x:Key="PrinterGridHoverBrush" Color="#333740"/>
+        <SolidColorBrush x:Key="PrinterGridSelectedBrush" Color="#36516B"/>
+        <SolidColorBrush x:Key="PrinterGridHeaderBrush" Color="#2E3239"/>
+        <SolidColorBrush x:Key="PrinterGridForegroundBrush" Color="#F2F3F5"/>
+        <SolidColorBrush x:Key="PrinterGridMutedForegroundBrush" Color="#D6D9DE"/>
+        <SolidColorBrush x:Key="PrinterGridLineBrush" Color="#3A3E46"/>
+
         <Style TargetType="Button">
             <Setter Property="Padding" Value="14,8"/>
             <Setter Property="Margin" Value="0,0,8,8"/>
@@ -28,12 +38,60 @@
 
         <Style TargetType="DataGrid">
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="Background" Value="{StaticResource PrinterGridBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrinterGridForegroundBrush}"/>
+            <Setter Property="RowBackground" Value="{StaticResource PrinterGridRowBrush}"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource PrinterGridAlternateRowBrush}"/>
+            <Setter Property="AlternationCount" Value="2"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource PrinterGridLineBrush}"/>
+            <Setter Property="VerticalGridLinesBrush" Value="{StaticResource PrinterGridLineBrush}"/>
             <Setter Property="RowHeight" Value="38"/>
             <Setter Property="ColumnHeaderHeight" Value="36"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{StaticResource PrinterGridHeaderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrinterGridForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrinterGridLineBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Foreground" Value="{StaticResource PrinterGridForegroundBrush}"/>
+            <Setter Property="Background" Value="{StaticResource PrinterGridRowBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrinterGridLineBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Style.Triggers>
+                <Trigger Property="AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="{StaticResource PrinterGridAlternateRowBrush}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrinterGridHoverBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrinterGridSelectedBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="5,3"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
