@@ -16,27 +16,9 @@ public sealed class PrinterService
     public IReadOnlyList<PrinterInfo> GetPrinters()
     {
         var defaultPrinter = GetDefaultPrinterName();
-        var nativePrinters = EnumerateNativePrinters();
 
-        return nativePrinters
-            .Select(p => new PrinterInfo
-            {
-                Name = PrinterNative.PtrToString(p.pPrinterName),
-                PortName = PrinterNative.PtrToString(p.pPortName),
-                DriverName = PrinterNative.PtrToString(p.pDriverName),
-                ServerName = NullIfEmpty(PrinterNative.PtrToString(p.pServerName)),
-                ShareName = NullIfEmpty(PrinterNative.PtrToString(p.pShareName)),
-                Location = NullIfEmpty(PrinterNative.PtrToString(p.pLocation)),
-                Comment = NullIfEmpty(PrinterNative.PtrToString(p.pComment)),
-                StatusFlags = p.Status,
-                Attributes = p.Attributes,
-                JobCount = p.cJobs,
-                IsDefault = string.Equals(
-                    PrinterNative.PtrToString(p.pPrinterName),
-                    defaultPrinter,
-                    StringComparison.OrdinalIgnoreCase),
-                NetworkHost = ResolveNetworkHost(PrinterNative.PtrToString(p.pPortName))
-            })
+        return EnumeratePrinters(defaultPrinter)
+            .Where(p => !string.IsNullOrWhiteSpace(p.Name))
             .OrderByDescending(p => p.IsDefault)
             .ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -75,7 +57,7 @@ public sealed class PrinterService
         });
     }
 
-    private static List<PrinterInfo2Native> EnumerateNativePrinters()
+    private static List<PrinterInfo> EnumeratePrinters(string? defaultPrinter)
     {
         var flags = PrinterEnumFlags.Local | PrinterEnumFlags.Connections;
 
@@ -89,13 +71,36 @@ public sealed class PrinterService
             if (!PrinterNative.EnumPrinters(flags, null, Level, buffer, bytesNeeded, out _, out var returned))
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Impossibile enumerare le stampanti installate.");
 
-            var result = new List<PrinterInfo2Native>(checked((int)returned));
+            var result = new List<PrinterInfo>(checked((int)returned));
             var itemSize = Marshal.SizeOf<PrinterInfo2Native>();
 
             for (var i = 0; i < returned; i++)
             {
                 var ptr = IntPtr.Add(buffer, checked((int)i * itemSize));
-                result.Add(Marshal.PtrToStructure<PrinterInfo2Native>(ptr));
+                var native = Marshal.PtrToStructure<PrinterInfo2Native>(ptr);
+
+                // Important: all strings referenced by PRINTER_INFO_2 point inside
+                // the EnumPrinters buffer. Copy them to managed strings before
+                // freeing the buffer, otherwise subsequent reads can return
+                // corrupted/empty printer names and ports.
+                var name = PrinterNative.PtrToString(native.pPrinterName);
+                var portName = PrinterNative.PtrToString(native.pPortName);
+
+                result.Add(new PrinterInfo
+                {
+                    Name = name,
+                    PortName = portName,
+                    DriverName = PrinterNative.PtrToString(native.pDriverName),
+                    ServerName = NullIfEmpty(PrinterNative.PtrToString(native.pServerName)),
+                    ShareName = NullIfEmpty(PrinterNative.PtrToString(native.pShareName)),
+                    Location = NullIfEmpty(PrinterNative.PtrToString(native.pLocation)),
+                    Comment = NullIfEmpty(PrinterNative.PtrToString(native.pComment)),
+                    StatusFlags = native.Status,
+                    Attributes = native.Attributes,
+                    JobCount = native.cJobs,
+                    IsDefault = string.Equals(name, defaultPrinter, StringComparison.OrdinalIgnoreCase),
+                    NetworkHost = ResolveNetworkHost(portName)
+                });
             }
 
             return result;
@@ -141,7 +146,11 @@ public sealed class PrinterService
             // Registry metadata is optional. Fall back to common port naming below.
         }
 
-        if (portName.StartsWith("IP_", StringComparison.OrdinalIgnoreCase))
+        if (IPAddress.TryParse(portName, out _))
+            return portName;
+
+        if (portName.StartsWith("IP_", StringComparison.OrdinalIgnoreCase) ||
+            portName.StartsWith("EP_", StringComparison.OrdinalIgnoreCase))
         {
             var candidate = portName[3..];
             if (IPAddress.TryParse(candidate, out _) || candidate.Contains('.'))
