@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using PrinterManagerNativeTool.Models;
@@ -26,6 +27,11 @@ public partial class MainWindow : Window
         _printerView = CollectionViewSource.GetDefaultView(_printers);
         _printerView.Filter = FilterPrinter;
         PrintersGrid.ItemsSource = _printerView;
+
+        UpdateSearchPlaceholder();
+        NetworkDiagnosticsPanel.Visibility = Visibility.Collapsed;
+        NoNetworkDiagnosticsText.Visibility = Visibility.Collapsed;
+        OpenWebButton.Visibility = Visibility.Collapsed;
 
         Loaded += async (_, _) => await RefreshPrintersAsync();
     }
@@ -64,6 +70,8 @@ public partial class MainWindow : Window
             foreach (var printer in printers)
                 _printers.Add(printer);
 
+            UpdateSummary();
+
             if (!string.IsNullOrWhiteSpace(previousSelection))
             {
                 PrintersGrid.SelectedItem = _printers.FirstOrDefault(
@@ -73,11 +81,15 @@ public partial class MainWindow : Window
             if (PrintersGrid.SelectedItem is null && _printers.Count > 0)
                 PrintersGrid.SelectedIndex = 0;
 
+            if (_printers.Count == 0)
+                UpdateDetails();
+
             StatusBarText.Text = $"{_printers.Count} stampanti rilevate";
             RefreshSpoolerStatus();
         }
         catch (Exception ex)
         {
+            SummaryText.Text = "Impossibile leggere le stampanti";
             StatusBarText.Text = "Errore durante il caricamento";
             ShowError(ex);
         }
@@ -87,23 +99,66 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UpdateSummary()
+    {
+        var ready = _printers.Count(p => string.Equals(
+            p.StatusText, "Pronta", StringComparison.OrdinalIgnoreCase));
+        var notReady = _printers.Count - ready;
+        var jobs = _printers.Sum(p => (long)p.JobCount);
+
+        SummaryText.Text =
+            $"{_printers.Count} stampanti   •   {ready} pronte   •   {notReady} non pronte   •   {jobs} job";
+    }
+
     private void RefreshSpoolerStatus()
     {
         try
         {
-            SpoolerStatusText.Text = $"Spooler: {_spoolerService.GetStatus()}";
+            var status = _spoolerService.GetStatus();
+            SpoolerStatusText.Text = $"●  Spooler: {TranslateServiceStatus(status)}";
         }
         catch
         {
-            SpoolerStatusText.Text = "Spooler: stato non disponibile";
+            SpoolerStatusText.Text = "○  Spooler: stato non disponibile";
         }
     }
 
-    private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e) =>
+    private static string TranslateServiceStatus(string status) =>
+        status switch
+        {
+            "Running" => "in esecuzione",
+            "Stopped" => "arrestato",
+            "Paused" => "in pausa",
+            "StartPending" => "avvio in corso",
+            "StopPending" => "arresto in corso",
+            "PausePending" => "sospensione in corso",
+            "ContinuePending" => "ripresa in corso",
+            _ => status
+        };
+
+    private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        UpdateSearchPlaceholder();
         _printerView.Refresh();
+    }
+
+    private void UpdateSearchPlaceholder() =>
+        SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e) =>
         await RefreshPrintersAsync();
+
+    private void ToolsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ToolsButton.ContextMenu is not { } menu)
+            return;
+
+        menu.PlacementTarget = ToolsButton;
+        menu.Placement = PlacementMode.Bottom;
+        menu.IsOpen = true;
+    }
 
     private void PrintersGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
@@ -123,9 +178,7 @@ public partial class MainWindow : Window
         var selected = printer is not null;
 
         PrinterActionsPanel.IsEnabled = selected;
-        DiagnoseButton.IsEnabled = selected && printer!.IsNetworkPrinter;
         CopyDiagnosticButton.IsEnabled = selected;
-        OpenWebButton.IsEnabled = selected && printer!.IsNetworkPrinter;
 
         if (!selected)
         {
@@ -133,18 +186,42 @@ public partial class MainWindow : Window
             SelectedPrinterStatus.Text = string.Empty;
             DriverValue.Text = PortValue.Text = HostValue.Text = JobsValue.Text = DefaultValue.Text = "—";
             PingValue.Text = RawValue.Text = "—";
+            NetworkDiagnosticsPanel.Visibility = Visibility.Collapsed;
+            NoNetworkDiagnosticsText.Visibility = Visibility.Collapsed;
+            OpenWebButton.Visibility = Visibility.Collapsed;
             return;
         }
 
-        SelectedPrinterName.Text = printer!.Name;
-        SelectedPrinterStatus.Text = printer.StatusText;
-        DriverValue.Text = printer.DriverName;
-        PortValue.Text = printer.PortName;
+        var hasNetworkHost = printer!.IsNetworkPrinter;
+
+        SelectedPrinterName.Text = printer.Name;
+        SelectedPrinterStatus.Text = $"●  {printer.StatusText}";
+        DriverValue.Text = string.IsNullOrWhiteSpace(printer.DriverName) ? "Non disponibile" : printer.DriverName;
+        PortValue.Text = string.IsNullOrWhiteSpace(printer.PortName) ? "Non disponibile" : printer.PortName;
         HostValue.Text = printer.NetworkHost ?? "Non rilevato";
         JobsValue.Text = printer.JobCount.ToString();
         DefaultValue.Text = printer.IsDefault ? "Sì" : "No";
-        PingValue.Text = printer.IsNetworkPrinter ? "Non eseguito" : "N/D";
-        RawValue.Text = printer.IsNetworkPrinter ? "Non eseguito" : "N/D";
+
+        SetDefaultButton.IsEnabled = !printer.IsDefault;
+        OpenWebButton.Visibility = hasNetworkHost ? Visibility.Visible : Visibility.Collapsed;
+        OpenWebButton.IsEnabled = hasNetworkHost;
+
+        NetworkDiagnosticsPanel.Visibility = hasNetworkHost
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        NoNetworkDiagnosticsText.Visibility = hasNetworkHost
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+        NoNetworkDiagnosticsText.Text = printer.PortName.StartsWith(
+            "WSD", StringComparison.OrdinalIgnoreCase)
+            ? "Porta WSD: Windows non espone un indirizzo IP diretto utilizzabile da questi test."
+            : "Questa porta non espone un indirizzo di rete utilizzabile per la diagnostica.";
+
+        DiagnoseButton.IsEnabled = hasNetworkHost;
+        PingValue.Text = hasNetworkHost ? "Non eseguito" : "N/D";
+        RawValue.Text = hasNetworkHost ? "Non eseguito" : "N/D";
     }
 
     private void OpenQueueButton_Click(object sender, RoutedEventArgs e) =>
@@ -264,10 +341,10 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RestartSpoolerButton_Click(object sender, RoutedEventArgs e) =>
+    private void RestartSpoolerMenuItem_Click(object sender, RoutedEventArgs e) =>
         RunElevatedSpoolerAction("restart-spooler");
 
-    private void ClearSpoolerButton_Click(object sender, RoutedEventArgs e) =>
+    private void ClearSpoolerMenuItem_Click(object sender, RoutedEventArgs e) =>
         RunElevatedSpoolerAction("clear-spooler");
 
     private void RunElevatedSpoolerAction(string action)
