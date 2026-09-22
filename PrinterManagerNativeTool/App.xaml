@@ -36,6 +36,21 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
+        <Style x:Key="SearchTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Background" Value="#292C32"/>
+            <Setter Property="Foreground" Value="#F2F3F5"/>
+            <Setter Property="BorderBrush" Value="#444850"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="PrinterGridTextStyle" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+
         <Style TargetType="DataGrid">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Background" Value="{StaticResource PrinterGridBackgroundBrush}"/>
@@ -45,8 +60,8 @@
             <Setter Property="AlternationCount" Value="2"/>
             <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource PrinterGridLineBrush}"/>
             <Setter Property="VerticalGridLinesBrush" Value="{StaticResource PrinterGridLineBrush}"/>
-            <Setter Property="RowHeight" Value="38"/>
-            <Setter Property="ColumnHeaderHeight" Value="36"/>
+            <Setter Property="RowHeight" Value="33"/>
+            <Setter Property="ColumnHeaderHeight" Value="34"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
         </Style>
@@ -56,7 +71,7 @@
             <Setter Property="Foreground" Value="{StaticResource PrinterGridForegroundBrush}"/>
             <Setter Property="BorderBrush" Value="{StaticResource PrinterGridLineBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="Padding" Value="7,4"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
@@ -66,6 +81,7 @@
             <Setter Property="Background" Value="{StaticResource PrinterGridRowBrush}"/>
             <Setter Property="BorderBrush" Value="{StaticResource PrinterGridLineBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Style.Triggers>
                 <Trigger Property="AlternationIndex" Value="1">
                     <Setter Property="Background" Value="{StaticResource PrinterGridAlternateRowBrush}"/>
@@ -84,7 +100,7 @@
             <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="5,3"/>
+            <Setter Property="Padding" Value="4,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
